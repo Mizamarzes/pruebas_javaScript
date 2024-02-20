@@ -1,3 +1,4 @@
+// Datos simulados
 const clientes = [
     {
         id: 1,
@@ -44,45 +45,81 @@ const facturas = [
     }
 ];
 
-const getClient=(id, callback)=>{
-    const client=clientes.find(x=>x.id===id)?.nombre;
-    if(client){
-        callback(null,client);
-    }else{
-        callback(`Client with the id ${id} not exist`);
+// Función para obtener un cliente por su ID
+const getCliente = (id, callback) => {
+    const cliente = clientes.find(c => c.id === id);
+    if (cliente) {
+        callback(null, cliente);
+    } else {
+        callback("Cliente con el " + id + " no existe");
     }
 };
 
-const getProduct=(id,callback)=>{
-    const product=productos.find(s=>s.id===id)?.product
-    if(product){
-        callback(null,product);
-    }else{
-        callback(`The products'id ${id} not exist`);
+// Función para obtener un producto por su ID
+const getProducto = (id, callback) => {
+    const producto = productos.find(p => p.id === id);
+    if (producto) {
+        callback(null, producto);
+    } else {
+        callback("Producto con el ID " + id + " no existe");
     }
 };
 
-const totalFacture=(products,facturaProductos, callback)=>{
-    let total=0;
-    facturaProductos.forEach(productoId=>{
-        const product=products.find(p=>p.id===productoId);
-        if(product){
-            total+= product.precio
-        }
+// Función para calcular el total de una factura
+const calcularTotalFactura = (productos, callback) => {
+    let total = 0;
+    productos.forEach(productoId => {
+        getProducto(productoId, (error, producto) => {
+            if (error) {
+                callback(error);
+            } else {
+                total += producto.precio;
+                if (productos.indexOf(productoId) === productos.length - 1) {
+                    // Último producto, llamar al callback con el total calculado
+                    callback(null, total);
+                }
+            }
+        });
     });
-    callback(total)
 };
 
-const facturaProductos = facturas[0].productos; 
-totalFacture(productos, facturaProductos, total => {
-    console.log("Total de la factura:", total);
-});
-
-const infoFacture=(factureId, callback)=>{
-    const factureIdNumber=facturas.find(k=>k.id===factureId)?.factureIdNumber;
-    if(factureIdNumber){
-        callback(null,factureIdNumber)
-    }else{
-        callback(`Not exist the facture'id, id: ${id}`);
+// Función principal para obtener información de la factura
+const obtenerInformacionFactura = (facturaId, callback) => {
+    const factura = facturas.find(f => f.id === facturaId);
+    if (factura) {
+        getCliente(factura.clienteId, (errorCliente, cliente) => {
+            if (errorCliente) {
+                callback(errorCliente);
+            } else {
+                calcularTotalFactura(factura.productos, (errorTotal, total) => {
+                    if (errorTotal) {
+                        callback(errorTotal);
+                    } else {
+                        factura.total = total;
+                        callback(null, {
+                            factura,
+                            cliente,
+                            productos: factura.productos
+                        });
+                    }
+                });
+            }
+        });
+    } else {
+        callback("Factura con el ID " + facturaId + " no existe");
     }
-}
+};
+
+// Ejercicio: Obtener información de la factura con ID 1001
+const facturaId = 1001;
+
+obtenerInformacionFactura(facturaId, (error, infoFactura) => {
+    if (error) {
+        console.error("Error al obtener información de la factura:", error);
+    } else {
+        console.log("Información de la factura:");
+        console.log("Cliente:", infoFactura.cliente);
+        console.log("Productos:", infoFactura.productos);
+        console.log("Total de la factura:", infoFactura.factura.total);
+    }
+});
