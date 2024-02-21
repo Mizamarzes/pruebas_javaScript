@@ -78,21 +78,34 @@ const obtenerInformacionFactura = ( facturas ) =>{
     return new Promise (( resolve, reject )=>{
         const factura = facturas.find(f=>f.id===facturaId)
         if(factura){
-            const facturaClienteid=getCliente(factura.clienteId)
-            if(facturaClienteid){
-                const facturaProductsClient = calcularTotalFactura(factura.productos)
-                if (facturaProductsClient){
-                    //adsadsadsadasdasdasdsa
-                }else{
-                    console.log("Products don't exist")
-                }
-            }else{
-                console.log(`Id'client of facture: ${facturaId} doesn't exist`)
-            }
+            getCliente(factura.clienteId)
+                .then(cliente => {
+                    return calcularTotalFactura(factura.productos)
+                        .then(total => {
+                            factura.total = total;
+                            resolve({
+                                factura,
+                                cliente,
+                                productos: factura.productos
+                            });
+                        });
+                })
+                .catch(reject);
         }else{
-            reject(`Facture with id: ${facturaId} doesn't exist`)
+            reject(`Facture with id: ${facturaId} doesn't exist`);
         }
-    })
-}
+    });
+};
 
 const facturaId= 1001;
+
+obtenerInformacionFactura(facturaId)
+    .then(infoFactura => {
+        console.log("Información de la factura:");
+        console.log("Cliente:", infoFactura.cliente);
+        console.log("Productos:", infoFactura.productos);
+        console.log("Total de la factura:", infoFactura.factura.total);
+    })
+    .catch(error => {
+        console.error("Error al obtener información de la factura:", error);
+    });
